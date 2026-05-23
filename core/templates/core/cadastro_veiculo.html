@@ -1,0 +1,81 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Cadastro de Veículo{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 560px;">
+    <div class="page-header">
+        <a href="{% url 'home' %}" class="page-back">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i> Início
+        </a>
+        <h2>Cadastro de Veículo</h2>
+    </div>
+
+    <div class="card">
+        <form method="post" id="form-veiculo" novalidate aria-label="Formulário de cadastro de veículo">
+            {% csrf_token %}
+
+            <div class="form-group">
+                {{ form.modelo_predefinido.label_tag }}
+                {{ form.modelo_predefinido }}
+                {% if form.modelo_predefinido.errors %}
+                <div class="form-error" role="alert">{{ form.modelo_predefinido.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.placa.label_tag }}
+                <input type="text" name="placa" id="{{ form.placa.id_for_label }}"
+                       placeholder="AAA1234" maxlength="8"
+                       value="{{ form.placa.value|default:'' }}"
+                       style="text-transform:uppercase;"
+                       aria-required="true"
+                       {% if form.placa.errors %}aria-describedby="erro-placa"{% endif %}>
+                {% if form.placa.errors %}
+                <div id="erro-placa" class="form-error" role="alert">{{ form.placa.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.proprietario.label_tag }}
+                <input type="text" name="proprietario" id="{{ form.proprietario.id_for_label }}"
+                       placeholder="Nome do proprietário"
+                       value="{{ form.proprietario.value|default:'' }}"
+                       aria-required="true"
+                       {% if form.proprietario.errors %}aria-describedby="erro-prop"{% endif %}>
+                {% if form.proprietario.errors %}
+                <div id="erro-prop" class="form-error" role="alert">{{ form.proprietario.errors }}</div>
+                {% endif %}
+            </div>
+
+            <input type="hidden" id="id_marca"  name="marca">
+            <input type="hidden" id="id_modelo" name="modelo">
+
+            <button type="submit" class="btn btn-full">
+                <i class="fa fa-save" aria-hidden="true"></i> Cadastrar Veículo
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const sel = document.getElementById('id_modelo_predefinido');
+    if (!sel) return;
+    $(sel).select2({ placeholder: 'Selecione marca e modelo', allowClear: true, width: '100%' });
+    function preencher() {
+        const txt = sel.options[sel.selectedIndex]?.text || '';
+        if (txt.includes(' - ')) {
+            const [m, mo] = txt.split(' - ');
+            document.getElementById('id_marca').value  = m.trim();
+            document.getElementById('id_modelo').value = mo.trim();
+        }
+    }
+    sel.addEventListener('change', preencher);
+    document.getElementById('form-veiculo').addEventListener('submit', preencher);
+    preencher();
+});
+</script>
+{% endblock %}

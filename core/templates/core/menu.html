@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Menu Principal{% endblock %}
+
+{% block content %}
+<div class="MENU">
+    <div class="container">
+        <!-- Logo lateral -->
+        <div class="logo">
+            <img src="{% static 'imagens/logo-novo.png' %}" alt="Polícia Penal — logotipo">
+        </div>
+
+        <!-- Navegação principal -->
+        <nav class="menu" aria-label="Menu principal">
+            <a href="{% url 'registro' %}" aria-label="Registrar entrada ou saída de veículo">
+                <i class="fa fa-file-signature" aria-hidden="true"></i>
+                ENTRADA/SAÍDA
+            </a>
+
+            <a href="{% url 'cadastro_usuario' %}" aria-label="Cadastrar novo usuário">
+                <i class="fa fa-user" aria-hidden="true"></i>
+                CADASTRAR USUÁRIO
+            </a>
+
+            <a href="{% url 'cadastro_veiculo' %}" aria-label="Cadastrar novo veículo">
+                <i class="fa fa-car" aria-hidden="true"></i>
+                CADASTRAR VEÍCULO
+            </a>
+
+            <a href="{% url 'historico' %}" aria-label="Ver histórico de registros">
+                <i class="fa fa-list" aria-hidden="true"></i>
+                HISTÓRICO
+            </a>
+
+            <a href="/admin/" aria-label="Acessar painel de administração">
+                <i class="fa fa-cog" aria-hidden="true"></i>
+                ADMINISTRAÇÃO
+            </a>
+
+            <a href="{% url 'dashboard' %}" aria-label="Ver gráficos e análises">
+                <i class="fa fa-area-chart" aria-hidden="true"></i>
+                GRÁFICOS
+            </a>
+        </nav>
+    </div>
+</div>
+{% endblock %}

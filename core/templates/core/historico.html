@@ -1,0 +1,204 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Histórico de Registros{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <a href="{% url 'home' %}" class="page-back">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i> Início
+        </a>
+        <h2>Histórico de Registros</h2>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card" style="margin-bottom: 14px;">
+        <div class="filtros-grid">
+            <div class="filtro-grupo">
+                <label for="filtroDataInicio">De</label>
+                <input type="date" id="filtroDataInicio" class="filtro" value="{{ filtros.data_inicio }}">
+            </div>
+            <div class="filtro-grupo">
+                <label for="filtroDataFim">Até</label>
+                <input type="date" id="filtroDataFim" class="filtro" value="{{ filtros.data_fim }}">
+            </div>
+            <div class="filtro-grupo">
+                <label for="filtroTipo">Tipo</label>
+                <select id="filtroTipo" class="filtro">
+                    <option value="">Todos</option>
+                    <option value="Entrada" {% if filtros.tipo == "Entrada" %}selected{% endif %}>Entrada</option>
+                    <option value="Saída"   {% if filtros.tipo == "Saída"   %}selected{% endif %}>Saída</option>
+                </select>
+            </div>
+            <div class="filtro-grupo">
+                <label for="filtroPlaca">Placa</label>
+                <input type="text" id="filtroPlaca" class="filtro" placeholder="Ex: ABC1234" value="{{ filtros.veiculo }}">
+            </div>
+            <div class="filtro-grupo">
+                <label for="filtroProprietario">Proprietário</label>
+                <input type="text" id="filtroProprietario" class="filtro" placeholder="Nome" value="{{ filtros.usuario }}">
+            </div>
+        </div>
+        <div class="filtros-acoes">
+            <button type="button" id="btnLimpar" class="btn btn-outline btn-sm">Limpar</button>
+            <form method="get" action="{% url 'historico_pdf' %}" target="_blank" id="formPdf" style="display:inline;">
+                <input type="hidden" name="data_inicio" id="pdfDataInicio">
+                <input type="hidden" name="data_fim"    id="pdfDataFim">
+                <input type="hidden" name="tipo"        id="pdfTipo">
+                <input type="hidden" name="veiculo"     id="pdfVeiculo">
+                <input type="hidden" name="usuario"     id="pdfUsuario">
+                <button type="submit" class="btn btn-sm">
+                    <i class="fa fa-file-pdf" aria-hidden="true"></i> Relatório PDF
+                </button>
+            </form>
+        </div>
+        <div id="statusBusca" class="status-busca" aria-live="polite" aria-atomic="true"></div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+        <div class="table-wrap">
+            <table class="table" id="tabelaRegistros" role="table">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Hora</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Placa</th>
+                        <th scope="col">Proprietário</th>
+                        <th scope="col">Obs.</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela">
+                    {% for registro in page_obj %}
+                    <tr>
+                        <td data-label="ID">{{ registro.id }}</td>
+                        <td data-label="Data">{{ registro.data_hora|date:"d/m/Y" }}</td>
+                        <td data-label="Hora">{{ registro.data_hora|date:"H:i:s" }}</td>
+                        <td data-label="Tipo" class="{% if registro.tipo == 'Entrada' %}badge-entrada{% else %}badge-saida{% endif %}">
+                            {{ registro.tipo }}
+                        </td>
+                        <td data-label="Placa"><strong>{{ registro.veiculo.placa }}</strong></td>
+                        <td data-label="Proprietário">{{ registro.veiculo.proprietario }}</td>
+                        <td data-label="Obs.">{{ registro.observacoes }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" style="text-align:center; color:var(--text3); padding:24px;">
+                        Nenhum registro encontrado.
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="paginacao" id="paginacao">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&data_inicio={{ filtros.data_inicio }}&data_fim={{ filtros.data_fim }}&tipo={{ filtros.tipo }}&veiculo={{ filtros.veiculo }}&usuario={{ filtros.usuario }}">&laquo;</a>
+                <a href="?page={{ page_obj.previous_page_number }}&data_inicio={{ filtros.data_inicio }}&data_fim={{ filtros.data_fim }}&tipo={{ filtros.tipo }}&veiculo={{ filtros.veiculo }}&usuario={{ filtros.usuario }}">Anterior</a>
+            {% endif %}
+            <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&data_inicio={{ filtros.data_inicio }}&data_fim={{ filtros.data_fim }}&tipo={{ filtros.tipo }}&veiculo={{ filtros.veiculo }}&usuario={{ filtros.usuario }}">Próxima</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&data_inicio={{ filtros.data_inicio }}&data_fim={{ filtros.data_fim }}&tipo={{ filtros.tipo }}&veiculo={{ filtros.veiculo }}&usuario={{ filtros.usuario }}">&raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    const ENDPOINT = "{% url 'historico_json' %}";
+    const DEBOUNCE_MS = 400;
+    const inputs = {
+        dataInicio:   document.getElementById('filtroDataInicio'),
+        dataFim:      document.getElementById('filtroDataFim'),
+        tipo:         document.getElementById('filtroTipo'),
+        placa:        document.getElementById('filtroPlaca'),
+        proprietario: document.getElementById('filtroProprietario'),
+    };
+    const corpo = document.getElementById('corpoTabela');
+    const statusEl = document.getElementById('statusBusca');
+    const paginacao = document.getElementById('paginacao');
+    let timer = null, ctrl = null;
+
+    function construirParams() {
+        const p = new URLSearchParams();
+        if (inputs.dataInicio.value)   p.set('data_inicio', inputs.dataInicio.value);
+        if (inputs.dataFim.value)      p.set('data_fim',    inputs.dataFim.value);
+        if (inputs.tipo.value)         p.set('tipo',        inputs.tipo.value);
+        if (inputs.placa.value.trim()) p.set('veiculo',     inputs.placa.value.trim());
+        if (inputs.proprietario.value.trim()) p.set('usuario', inputs.proprietario.value.trim());
+        return p;
+    }
+
+    async function buscar() {
+        if (ctrl) ctrl.abort();
+        ctrl = new AbortController();
+        const params = construirParams();
+        if (!params.toString()) { location.reload(); return; }
+
+        statusEl.textContent = 'Buscando…';
+        statusEl.className = 'status-busca buscando';
+        paginacao.style.display = 'none';
+        corpo.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px;">Carregando…</td></tr>`;
+
+        try {
+            const resp = await fetch(`${ENDPOINT}?${params}`, { signal: ctrl.signal });
+            const json = await resp.json();
+            renderTabela(json.registros);
+            statusEl.textContent = `${json.total} registro(s) encontrado(s)`;
+            statusEl.className = 'status-busca resultado';
+            sincPdf(params);
+        } catch(e) {
+            if (e.name === 'AbortError') return;
+            statusEl.textContent = 'Erro na busca.';
+            statusEl.className = 'status-busca';
+        }
+    }
+
+    function renderTabela(regs) {
+        if (!regs.length) {
+            corpo.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px;">Nenhum registro encontrado.</td></tr>`;
+            return;
+        }
+        const LABELS = ['ID','Data','Hora','Tipo','Placa','Proprietário','Obs.'];
+        corpo.innerHTML = regs.map(r => {
+            const cls = r.tipo.toLowerCase() === 'entrada' ? 'badge-entrada' : 'badge-saida';
+            const cols = [r.id, r.data, r.hora, r.tipo, r.placa, r.proprietario, r.observacoes];
+            return '<tr>' + cols.map((v,i) =>
+                `<td data-label="${LABELS[i]}" ${i===3?`class="${cls}"`:''} ${i===4?`style="font-weight:700"`:''}>
+                    ${v}
+                </td>`).join('') + '</tr>';
+        }).join('');
+    }
+
+    function sincPdf(p) {
+        document.getElementById('pdfDataInicio').value = p.get('data_inicio')||'';
+        document.getElementById('pdfDataFim').value    = p.get('data_fim')||'';
+        document.getElementById('pdfTipo').value       = p.get('tipo')||'';
+        document.getElementById('pdfVeiculo').value    = p.get('veiculo')||'';
+        document.getElementById('pdfUsuario').value    = p.get('usuario')||'';
+    }
+
+    function agendar() {
+        clearTimeout(timer);
+        timer = setTimeout(buscar, DEBOUNCE_MS);
+    }
+
+    document.getElementById('btnLimpar').addEventListener('click', () => {
+        Object.values(inputs).forEach(el => el.value = '');
+        statusEl.textContent = '';
+        location.reload();
+    });
+    Object.values(inputs).forEach(el => {
+        el.addEventListener('input', agendar);
+        el.addEventListener('change', agendar);
+    });
+})();
+</script>
+{% endblock %}

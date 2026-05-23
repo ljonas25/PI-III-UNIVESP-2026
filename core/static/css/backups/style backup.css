@@ -1,0 +1,190 @@
+@import url("https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css");
+* {
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+
+/* Container principal do login */
+.LOGIN {
+    background-color: #000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Caixa central (pode ser o card do login) */
+.LOGIN .div {
+    background-color: #252525;
+    display: flex;
+    flex-direction: row;       /* Alinha os itens em linha */
+    flex-wrap: nowrap;         /* Não permite quebra para a linha de baixo */
+    width: 100%;
+    max-width: 1280px;
+    min-height: 720px;
+    box-sizing: border-box;
+    overflow-x: auto;          /* Permite scroll horizontal se o conteúdo extrapolar */
+}
+
+/* Seção da imagem (logo) */
+.LOGIN .logo-policia-penal {
+    flex: 1;
+    max-width: 560px;
+    object-fit: cover;
+    width: 100%;
+    height: auto;
+}
+
+/* Área de conteúdo do formulário */
+.LOGIN .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+
+    align-items: center; /* Centraliza os itens horizontalmente */
+    gap: 20px; /* Espaçamento entre os botões */
+    font-family: "Livvic-Thin", Helvetica, sans-serif;
+    font-weight: 100;
+    color: #ffffff;
+    font-size: 3rem; /* Utilizando rem para escalabilidade */
+    margin-bottom: 20px;
+    text-align: center;
+
+}
+
+/* Título do login */
+.LOGIN .text-wrapper {
+    font-family: "Livvic-Thin", Helvetica, sans-serif;
+    font-weight: 100;
+    color: #ffffff;
+    font-size: 3rem; /* Utilizando rem para escalabilidade */
+    margin-bottom: 20px;
+}
+
+/* Caixa de input, usada tanto para login quanto para senha */
+.LOGIN .input-box {
+    border: 1px solid #b8b8b8;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 550px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    margin-bottom: 20px;
+}
+
+/* Texto dentro dos inputs */
+.LOGIN .input-box span {
+    font-family: "M PLUS 2-Regular", Helvetica, sans-serif;
+    font-weight: 400;
+    /*color: #7f7f7f; */
+    font-size: 1rem;
+}
+
+/* Botão de entrar */
+.LOGIN .button-box {
+    background-color: #ffdd06;
+    border: none;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 550px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.LOGIN .button-box span {
+    font-family: "M PLUS 2-Bold", Helvetica, sans-serif;
+    font-weight: 700;
+    color: #252525;
+    font-size: 1.5rem;
+}
+
+/* Área de conteúdo do Dashboard */
+/* Container principal do login */
+.DASHBOARD {
+    background-color: #000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+}
+.DASHBOARD .div {
+    background-color: #252525;
+    display: flex;
+    flex-direction: row;       /* Alinha os itens em linha */
+    flex-wrap: nowrap;         /* Não permite quebra para a linha de baixo */
+    width: 100%;
+    max-width: 1280px;
+    min-height: 720px;
+    box-sizing: border-box;
+    overflow-x: auto;          /* Permite scroll horizontal se o conteúdo extrapolar */
+}
+
+/* Seção da imagem (logo) */
+.DASHBOARD .logo-policia-penal {
+    flex: 1;
+    max-width: 560px;
+    object-fit: cover;
+    width: 100%;
+    height: auto;
+}
+
+/* Área de conteúdo do formulário */
+.DASHBOARD .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Título do login */
+.DASHBOARD .text-wrapper {
+    font-family: "Livvic-Thin", Helvetica, sans-serif;
+    font-weight: 100;
+    color: #ffffff;
+    font-size: 3rem; /* Utilizando rem para escalabilidade */
+    margin-bottom: 20px;
+}
+
+input[type="text"], select, textarea {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 2px solid #ccc;
+    border-radius: 12px;
+    box-sizing: border-box;
+    background-color: #252525;
+    color: #fff;
+    font-size: 16px;
+}
+
+select {
+    background-color: #252525;
+    color: #ffffff;
+}
+
+select option {
+    background-color: #252525;
+    color: #ffffff;
+}
+
+table th, table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ffffff33;
+}

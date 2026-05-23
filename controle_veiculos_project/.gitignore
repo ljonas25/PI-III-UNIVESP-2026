@@ -1,0 +1,17 @@
+# Ignorar o ambiente virtual
+env/
+.env
+
+# Ignorar arquivos compilados do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Configurações do VS Code
+.vscode/
+
+# Caso use SQLite (não aplicável se você estiver usando MySQL)
+db.sqlite3
+
+# Outros arquivos temporários ou de log
+*.log

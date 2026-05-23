@@ -1,0 +1,138 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <a href="{% url 'home' %}" class="page-back">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i> Início
+        </a>
+        <div class="dash-header">
+            <h2>Dashboard de Análise</h2>
+            <form method="get" class="periodo-form">
+                <label for="periodo">Período:</label>
+                <select name="periodo" id="periodo" onchange="this.form.submit()">
+                    {% for key, label in periodos.items %}
+                    <option value="{{ key }}" {% if periodo == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <span style="font-size:11px; color:var(--text3);">desde {{ data_inicio_fmt }}</span>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="cards-dashboard">
+        <div class="card-dashboard"><h3>Entradas</h3><p>{{ total_entradas }}</p><span class="card-sub">no período</span></div>
+        <div class="card-dashboard"><h3>Saídas</h3><p>{{ total_saidas }}</p><span class="card-sub">no período</span></div>
+        <div class="card-dashboard"><h3>Total</h3><p>{{ total_registros }}</p><span class="card-sub">no período</span></div>
+        <div class="card-dashboard"><h3>Hoje</h3><p>{{ total_hoje }}</p><span class="card-sub">movimentações</span></div>
+        <div class="card-dashboard card-destaque"><h3>Interno</h3><p>{{ veiculos_dentro }}</p><span class="card-sub">no pátio</span></div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="graficos-grid">
+        <div class="grafico-container">
+            <h3>Entradas × Saídas por Dia</h3>
+            <canvas id="graficoBarras" aria-label="Gráfico de barras: entradas e saídas por dia" role="img"></canvas>
+        </div>
+        <div class="grafico-container">
+            <h3>Proporção no Período</h3>
+            <canvas id="graficoRosca" aria-label="Gráfico de rosca: proporção entre entradas e saídas" role="img"></canvas>
+        </div>
+    </div>
+
+    <!-- Top veículos -->
+    {% if top_veiculos %}
+    <div class="top-veiculos">
+        <h3>Top Veículos — Mais Acessos</h3>
+        <table class="table" role="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Placa</th>
+                    <th scope="col">Proprietário</th>
+                    <th scope="col">Acessos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in top_veiculos %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ v.veiculo__placa }}</strong></td>
+                    <td>{{ v.veiculo__proprietario }}</td>
+                    <td>
+                        <div class="barra-acessos">
+                            <span class="barra-fill" style="width:{{ v.acessos|default:0 }}0%"></span>
+                            <span class="barra-num">{{ v.acessos }}</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+{{ entradas_dia|json_script:"entradas-json" }}
+{{ saidas_dia|json_script:"saidas-json" }}
+{{ datas|json_script:"datas-json" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function () {
+    const datas    = JSON.parse(document.getElementById('datas-json').textContent);
+    const entradas = JSON.parse(document.getElementById('entradas-json').textContent);
+    const saidas   = JSON.parse(document.getElementById('saidas-json').textContent);
+    const totalE   = {{ total_entradas }};
+    const totalS   = {{ total_saidas }};
+
+    const isDark = () => document.documentElement.getAttribute('data-theme') !== 'light';
+    const grid   = () => isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+    const tick   = () => isDark() ? '#8590b2' : '#4a5270';
+    const leg    = () => isDark() ? '#dde2f2' : '#1a1e2e';
+
+    new Chart(document.getElementById('graficoBarras'), {
+        type: 'bar',
+        data: {
+            labels: datas,
+            datasets: [
+                { label: 'Entradas', data: entradas, backgroundColor: 'rgba(78,203,113,0.7)', borderColor: '#4ecb71', borderWidth: 1, borderRadius: 4 },
+                { label: 'Saídas',   data: saidas,   backgroundColor: 'rgba(255,107,107,0.7)', borderColor: '#ff6b6b', borderWidth: 1, borderRadius: 4 },
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { labels: { color: leg() } } },
+            scales: {
+                x: { ticks: { color: tick(), maxRotation: 45 }, grid: { color: grid() } },
+                y: { beginAtZero: true, ticks: { color: tick(), stepSize: 1 }, grid: { color: grid() } }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('graficoRosca'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Entradas', 'Saídas'],
+            datasets: [{ data: [totalE, totalS], backgroundColor: ['rgba(78,203,113,0.8)', 'rgba(255,107,107,0.8)'], borderColor: ['#4ecb71','#ff6b6b'], borderWidth: 2, hoverOffset: 8 }]
+        },
+        options: {
+            responsive: true, cutout: '65%',
+            plugins: {
+                legend: { position: 'bottom', labels: { color: leg() } },
+                tooltip: { callbacks: { label: ctx => {
+                    const t = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                    return ` ${ctx.label}: ${ctx.parsed} (${t?((ctx.parsed/t)*100).toFixed(1):0}%)`;
+                }}}
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

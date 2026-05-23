@@ -1,0 +1,19 @@
+# Dependências para rodar localmente (SQLite — sem mysqlclient)
+Django==5.2
+djangorestframework==3.16.0
+python-dotenv==1.1.1
+whitenoise==6.11.0
+reportlab==4.4.4
+xhtml2pdf==0.2.17
+Pillow>=10.0.0
+
+# Autenticação JWT na API REST
+djangorestframework-simplejwt==5.4.0
+
+# Testes e cobertura
+pytest==8.3.5
+pytest-django==4.10.0
+coverage==7.8.0
+
+# Linting (CI)
+flake8==7.2.0

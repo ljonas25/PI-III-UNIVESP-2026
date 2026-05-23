@@ -1,0 +1,161 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Cadastro de Usuário{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 560px;">
+    <div class="page-header">
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'home' %}" class="page-back">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i> Início
+        </a>
+        {% else %}
+        <a href="{% url 'login' %}" class="page-back">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i> Voltar ao login
+        </a>
+        {% endif %}
+        <h2>Cadastro de Usuário</h2>
+    </div>
+
+    <div class="card">
+        <form id="cadastroForm" method="post" novalidate aria-label="Formulário de cadastro de usuário">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="form-error" role="alert" style="margin-bottom: 16px;">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <!-- CPF -->
+            <div class="form-group">
+                {{ form.cpf.label_tag }}
+                <input type="text" name="cpf" id="{{ form.cpf.id_for_label }}"
+                       placeholder="000.000.000-00" maxlength="14"
+                       value="{{ form.cpf.value|default:'' }}"
+                       aria-required="true" autocomplete="username"
+                       {% if form.cpf.errors %}aria-describedby="erro-cpf"{% endif %}>
+                {% if form.cpf.errors %}
+                <div id="erro-cpf" class="form-error" role="alert">{{ form.cpf.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Nome do usuário (funcao) — opcional -->
+            <div class="form-group">
+                {{ form.funcao.label_tag }}
+                <input type="text" name="funcao" id="{{ form.funcao.id_for_label }}"
+                       placeholder="Nome do usuário / servidor (opcional)"
+                       value="{{ form.funcao.value|default:'' }}"
+                       autocomplete="name"
+                       {% if form.funcao.errors %}aria-describedby="erro-funcao"{% endif %}>
+                <small style="display:block; margin-top:5px; color:var(--text3); font-size:11px;">
+                    Se não informado, o CPF será usado como identificação.
+                </small>
+                {% if form.funcao.errors %}
+                <div id="erro-funcao" class="form-error" role="alert">{{ form.funcao.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Senha -->
+            <div class="form-group">
+                {{ form.password.label_tag }}
+                <input type="password" name="password" id="{{ form.password.id_for_label }}"
+                       placeholder="••••••••" aria-required="true" autocomplete="new-password"
+                       {% if form.password.errors %}aria-describedby="erro-pass"{% endif %}>
+                {% if form.password.errors %}
+                <div id="erro-pass" class="form-error" role="alert">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Confirmar senha -->
+            <div class="form-group">
+                {{ form.senha2.label_tag }}
+                <input type="password" name="senha2" id="{{ form.senha2.id_for_label }}"
+                       placeholder="Confirme a senha" aria-required="true" autocomplete="new-password"
+                       {% if form.senha2.errors %}aria-describedby="erro-senha2"{% endif %}>
+                {% if form.senha2.errors %}
+                <div id="erro-senha2" class="form-error" role="alert">{{ form.senha2.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Papel -->
+            <div class="form-group">
+                {{ form.papel.label_tag }}
+                {{ form.papel }}
+                {% if form.papel.errors %}
+                <div class="form-error" role="alert">{{ form.papel.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Senha de admin — aparece apenas quando "Administrador" é selecionado -->
+            <div class="form-group" id="adminPasswordGroup" style="display:none;">
+                {{ form.senha_admin.label_tag }}
+                <input type="password" name="senha_admin" id="{{ form.senha_admin.id_for_label }}"
+                       placeholder="Senha de um administrador existente"
+                       autocomplete="off"
+                       {% if form.senha_admin.errors %}aria-describedby="erro-senha-admin"{% endif %}>
+                <small style="display:block; margin-top:5px; color:var(--text3); font-size:11px;">
+                    Necessária apenas para cadastrar um administrador.
+                    Usuário comum não precisa desta senha.
+                </small>
+                {% if form.senha_admin.errors %}
+                <div id="erro-senha-admin" class="form-error" role="alert">{{ form.senha_admin.errors }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-full">
+                <i class="fa fa-user-check" aria-hidden="true"></i>
+                Cadastrar
+            </button>
+        </form>
+
+        <div style="text-align:center; margin-top:16px; font-size:13px; color:var(--text2);">
+            Já possui cadastro?
+            <a href="{% url 'login' %}" style="color:var(--gold); text-decoration:none;">Fazer login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Máscara de CPF → 000.000.000.00
+function mascaraCPF(valor) {
+    return valor
+        .replace(/\D/g, '')
+        .slice(0, 11)
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Máscara CPF
+    const cpfInput = document.getElementById('{{ form.cpf.id_for_label }}');
+    if (cpfInput) {
+        cpfInput.value = mascaraCPF(cpfInput.value || '');
+        cpfInput.addEventListener('input', function () {
+            this.value = mascaraCPF(this.value);
+        });
+    }
+
+    // Mostra/esconde campo de senha do admin conforme papel selecionado
+    const papelSelect  = document.getElementById('{{ form.papel.id_for_label }}');
+    const adminGroup   = document.getElementById('adminPasswordGroup');
+    const adminInput   = document.getElementById('{{ form.senha_admin.id_for_label }}');
+
+    function atualizarCampoAdmin() {
+        if (!papelSelect || !adminGroup) return;
+        const isAdmin = papelSelect.value === 'administrador';
+        adminGroup.style.display = isAdmin ? 'block' : 'none';
+        // Remove required nativo quando oculto; adiciona quando visível
+        if (adminInput) adminInput.required = false;
+    }
+
+    if (papelSelect) {
+        papelSelect.addEventListener('change', atualizarCampoAdmin);
+        atualizarCampoAdmin(); // aplica estado inicial (ex: ao voltar com erro)
+    }
+});
+</script>
+{% endblock %}

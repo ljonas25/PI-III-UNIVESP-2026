@@ -1,0 +1,148 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Entrada / Saída{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <a href="{% url 'home' %}" class="page-back">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i> Início
+        </a>
+        <h2>Registro de Entrada / Saída</h2>
+    </div>
+
+    <div class="card">
+        <form method="post" id="formRegistro" novalidate aria-label="Formulário de registro">
+            {% csrf_token %}
+
+            <!-- Tipo -->
+            <div class="form-group">
+                <label for="id_tipo">Tipo de Movimentação</label>
+                {{ form.tipo }}
+            </div>
+
+            <!-- Autocomplete de placa -->
+            <div class="form-group" style="position: relative;">
+                <label for="inputPlaca">Placa do Veículo</label>
+                <input type="text" id="inputPlaca"
+                       placeholder="Digite a placa (ex: ABC1234)"
+                       autocomplete="off"
+                       style="text-transform: uppercase;"
+                       maxlength="8"
+                       aria-required="true"
+                       aria-autocomplete="list"
+                       aria-controls="sugestoesPlaca"
+                       aria-label="Placa do veículo">
+                <input type="hidden" name="veiculo" id="veiculoIdHidden">
+                <ul id="sugestoesPlaca" role="listbox" aria-label="Sugestões de placa" style="display:none;"></ul>
+                <div id="infoVeiculo" class="info-veiculo" style="display:none;" aria-live="polite"></div>
+                <div id="alertaStatus" class="alerta-status" style="display:none;" aria-live="assertive"></div>
+            </div>
+
+            <!-- Observações -->
+            <div class="form-group">
+                <label for="id_observacoes">Observações <span style="color:var(--text3); font-weight:400;">(opcional)</span></label>
+                {{ form.observacoes }}
+            </div>
+
+            <button type="submit" class="btn btn-full" id="btnSubmit">
+                <i class="fa fa-check" aria-hidden="true"></i>
+                Registrar
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    const AUTOCOMPLETE_URL = "{% url 'autocomplete_veiculo' %}";
+    const HISTORICO_JSON   = "{% url 'historico_json' %}";
+
+    const inputPlaca    = document.getElementById('inputPlaca');
+    const sugestoesEl   = document.getElementById('sugestoesPlaca');
+    const veiculoHidden = document.getElementById('veiculoIdHidden');
+    const infoVeiculo   = document.getElementById('infoVeiculo');
+    const alertaStatus  = document.getElementById('alertaStatus');
+    let debounceTimer = null;
+
+    inputPlaca.addEventListener('input', function () {
+        const val = this.value.toUpperCase();
+        this.value = val;
+        veiculoHidden.value = '';
+        infoVeiculo.style.display = 'none';
+        alertaStatus.style.display = 'none';
+        clearTimeout(debounceTimer);
+        if (val.length < 2) { fecharSugestoes(); return; }
+        debounceTimer = setTimeout(() => buscarSugestoes(val), 300);
+    });
+
+    async function buscarSugestoes(termo) {
+        try {
+            const r = await fetch(`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(termo)}`);
+            renderSugestoes((await r.json()).veiculos);
+        } catch(e) { fecharSugestoes(); }
+    }
+
+    function renderSugestoes(veiculos) {
+        if (!veiculos.length) { fecharSugestoes(); return; }
+        sugestoesEl.innerHTML = veiculos.map(v =>
+            `<li role="option" data-id="${v.id}" data-placa="${v.placa}"
+                 data-proprietario="${v.proprietario}" data-marca="${v.marca}" data-modelo="${v.modelo}">
+                <span class="placa-destaque">${v.placa}</span>
+                <span class="placa-info">${v.proprietario} · ${v.marca} ${v.modelo}</span>
+             </li>`).join('');
+        sugestoesEl.style.display = 'block';
+        sugestoesEl.querySelectorAll('li').forEach(li =>
+            li.addEventListener('click', () => selecionarVeiculo(li)));
+    }
+
+    function selecionarVeiculo(li) {
+        inputPlaca.value    = li.dataset.placa;
+        veiculoHidden.value = li.dataset.id;
+        infoVeiculo.innerHTML =
+            `<strong>${li.dataset.placa}</strong> · ${li.dataset.proprietario} · ${li.dataset.marca} ${li.dataset.modelo}`;
+        infoVeiculo.style.display = 'block';
+        fecharSugestoes();
+        verificarStatus(li.dataset.placa);
+    }
+
+    async function verificarStatus(placa) {
+        try {
+            const r = await fetch(`${HISTORICO_JSON}?veiculo=${encodeURIComponent(placa)}`);
+            const data = await r.json();
+            if (!data.registros.length) { alertaStatus.style.display='none'; return; }
+            const ult = data.registros[0];
+            alertaStatus.className = `alerta-status ${ult.tipo === 'Entrada' ? 'dentro' : 'fora'}`;
+            alertaStatus.textContent = ult.tipo === 'Entrada'
+                ? `⚠ Entrou em ${ult.data} às ${ult.hora} — sem saída registrada.`
+                : `✓ Último registro: Saída em ${ult.data} às ${ult.hora}.`;
+            alertaStatus.style.display = 'block';
+        } catch(e) { alertaStatus.style.display='none'; }
+    }
+
+    function fecharSugestoes() {
+        sugestoesEl.style.display = 'none';
+        sugestoesEl.innerHTML = '';
+    }
+
+    document.addEventListener('click', e => {
+        if (!inputPlaca.contains(e.target) && !sugestoesEl.contains(e.target))
+            fecharSugestoes();
+    });
+
+    document.getElementById('formRegistro').addEventListener('submit', function(e) {
+        if (!veiculoHidden.value) {
+            e.preventDefault();
+            inputPlaca.style.borderColor = 'var(--red)';
+            alertaStatus.className = 'alerta-status dentro';
+            alertaStatus.textContent = '⚠ Selecione um veículo da lista antes de registrar.';
+            alertaStatus.style.display = 'block';
+            inputPlaca.focus();
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'core/base.html' %}
+{% block title %}Login — Controle de Veículos{% endblock %}
+{% block body_class %}page-login{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="login-screen">
+    <div class="login-wrapper">
+
+        <!-- Brasão grande acima do card -->
+        <img src="{% static 'imagens/logo-novo.png' %}"
+             alt="Brasão Polícia Penal SP"
+             class="login-brasao-grande">
+
+        <p class="login-subtitulo">POLÍCIA PENAL SP · CONTROLE DE VEÍCULOS</p>
+
+        <!-- Card de login -->
+        <div class="login-card">
+            {% if error %}
+            <div id="login-erro" class="login-erro" role="alert" aria-live="assertive">
+                <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form id="loginForm" method="post" novalidate aria-label="Formulário de acesso">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="cpf">CPF</label>
+                    <input type="text" id="cpf" name="cpf"
+                           placeholder="000.000.000.00"
+                           required aria-required="true"
+                           autocomplete="username"
+                           {% if error %}aria-describedby="login-erro"{% endif %}>
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha"
+                           placeholder="••••••••"
+                           required aria-required="true"
+                           autocomplete="current-password"
+                           {% if error %}aria-describedby="login-erro"{% endif %}>
+                </div>
+
+                <button type="submit" class="btn btn-full" style="margin-top: 8px;">
+                    <i class="fa fa-sign-in-alt" aria-hidden="true"></i>
+                    Entrar
+                </button>
+            </form>
+
+            <div class="login-links">
+                Novo usuário?
+                <a href="{% url 'cadastro_usuario' %}" class="btn-link-text">
+                    Solicitar cadastro
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function mascaraCPF(valor) {
+    return valor
+        .replace(/\D/g, '')
+        .slice(0, 11)
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1.$2');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const cpf = document.getElementById('cpf');
+    if (!cpf) return;
+    cpf.setAttribute('maxlength', '14');
+    cpf.addEventListener('input', function () {
+        this.value = mascaraCPF(this.value);
+    });
+});
+</script>
+{% endblock %}

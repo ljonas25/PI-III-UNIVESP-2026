@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Histórico de Acessos</title>
+  <style>
+    @page { size: A4; margin: 18mm 14mm 18mm 14mm; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+    h1 { font-size: 16px; margin: 0 0 6px; }
+    .meta { font-size: 10px; color: #555; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border: 1px solid #999; padding: 6px; vertical-align: middle; }
+    th { background: #f1f1f1; text-align: left; }
+
+    /* colunas - ajuste a % conforme desejado */
+    .col-id      { width: 7%;  text-align: right;  font-family: "DejaVu Sans Mono", monospace; }
+    .col-dh      { width: 16%; text-align: center; white-space: nowrap; font-family: "Arial", monospace; }
+    .col-tipo    { width: 11%; text-align: center; }
+    .col-placa   { width: 12%; text-align: center; white-space: nowrap; font-family: "Arial", monospace; }
+    .col-marca   { width: 20%; text-align: left; }
+    .col-usuario { width: 14%; text-align: center; white-space: nowrap; font-family: "Arial", monospace; }
+    .col-obs     { width: 20%; text-align: left; }
+
+    /* quebra em Observações */
+    .col-obs p { margin: 0; }
+
+    /* Opcional: altura mínima de linha para ficar “simétrico” */
+    td { line-height: 1.2; }
+
+    .right { text-align: right; }
+    .small { font-size: 10px; color: #666; }
+    .footer { position: fixed; bottom: -10px; left: 0; right: 0; text-align: center; font-size: 10px; color: #666; }
+    .header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .logo { height: 40px; vertical-align: middle; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <!-- Se quiser, habilite o logo e aponte o caminho: -->
+    <!-- <img class="logo" src="{%static '/imagens/logo-novo.png' %}" alt="Logo"> -->
+    <!-- <img src="{%static 'imagens/logo-novo.png' %}" alt="Logo Polícia Penal"> -->
+    <h1>Histórico de Acessos</h1>
+  </div>
+  <div class="meta">
+    Gerado em: {{ agora|date:"d/m/Y H:i" }} — Usuário: {{ request.user }}<br>
+    Filtros:
+    {% if filtros.tipo %}Tipo={{ filtros.tipo }}; {% endif %}
+    {% if filtros.data %}Data={{ filtros.data }}; {% endif %}
+    {% if filtros.veiculo %}Veículo={{ filtros.veiculo }}; {% endif %}
+    {% if filtros.usuario %}Usuário={{ filtros.usuario }}; {% endif %}
+    Total de registros: {{ registros|length }}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="col-id">#</th>
+        <th class="col-dh">Data/Hora</th>
+        <th class="col-tipo">Tipo</th>
+        <th class="col-placa">Placa</th>
+        <th class="col-marca">Marca / Modelo</th>
+        <th class="col-usuario">Usuário (CPF)</th>
+        <th class="col-obs">Observações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in registros %}
+      <tr>
+        <td class="col-id">{{ forloop.counter }}</td>
+        <td class="col-dh">{{ r.data_hora|date:"d/m/Y H:i" }}</td>
+        <td class="col-tipo">{{ r.tipo }}</td>
+        <td class="col-placa">{{ r.veiculo.placa }}</td>
+        <td class="col-marca">{{ r.veiculo.marca }} / {{ r.veiculo.modelo }}</td>
+        <td class="col-usuario">{{ r.usuario.cpf }}</td>
+        <td class="col-obs">{{ r.observacoes }}</td>
+      </tr>
+      {% empty %}
+      <tr><td class="col-obs" colspan="7">Nenhum registro encontrado para os filtros aplicados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Sistema Controle de Veículos
+  </div>
+</body>
+</html>

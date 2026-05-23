@@ -1,0 +1,195 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Início — Controle de Veículos{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- ── CABEÇALHO DA HOME: título limpo, sem repetir o brasão da topbar ── -->
+    <div class="home-hero">
+        <div>
+            <span class="eyebrow">Painel operacional</span>
+            <h1>Controle de Veículos</h1>
+            <p>Monitoramento diário de entradas, saídas e permanência no pátio.</p>
+        </div>
+    </div>
+
+    <!-- ── KPIs do dia ── -->
+    <div class="kpi-row" role="region" aria-label="Resumo do dia">
+        <div class="kpi-card gold">
+            <div class="kpi-num" id="kpiEntradas">{{ total_entradas_hoje }}</div>
+            <div class="kpi-label">Entradas hoje</div>
+        </div>
+        <div class="kpi-card red">
+            <div class="kpi-num red" id="kpiSaidas">{{ total_saidas_hoje }}</div>
+            <div class="kpi-label">Saídas hoje</div>
+        </div>
+        <div class="kpi-card green">
+            <div class="kpi-num green" id="kpiDentro">{{ veiculos_dentro }}</div>
+            <div class="kpi-label">Pátio</div>
+        </div>
+    </div>
+
+    <!-- ── FEED AO VIVO ── -->
+    <div class="card" role="region" aria-label="Fluxo diário de veículos">
+        <div class="feed-header">
+            <h3>Movimentações de hoje</h3>
+            <span class="live-dot" aria-hidden="true"></span>
+            <span class="feed-updated" id="feedAtualizado" aria-live="polite">ao vivo</span>
+        </div>
+
+        <!-- Dentro agora -->
+        <div class="feed-section">
+            <div class="feed-section-title green">
+                <span class="feed-section-dot green" aria-hidden="true">●</span>
+                Dentro agora
+                <span class="feed-count" id="countDentro">{{ dentro|length }}</span>
+            </div>
+            <div id="listaDentro">
+                {% for v in dentro %}
+                <div class="feed-item">
+                    <div class="feed-badge entrada" aria-hidden="true">↑</div>
+                    <div class="feed-info">
+                        <span class="feed-placa">{{ v.placa }}</span>
+                        <span class="feed-prop">{{ v.proprietario }}</span>
+                        <span class="feed-modelo">{{ v.modelo }}</span>
+                    </div>
+                    <div class="feed-tempo">
+                        <span class="feed-hora-label">entrou {{ v.entrada }}</span>
+                        <span class="feed-elapsed" data-ts="{{ v.entrada_ts }}">—</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="feed-empty-section">Nenhum veículo dentro no momento</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Saíram hoje -->
+        <div class="feed-section" style="margin-top: 12px;">
+            <div class="feed-section-title red">
+                <span class="feed-section-dot red" aria-hidden="true">●</span>
+                Saíram hoje
+                <span class="feed-count" id="countSaidas">{{ saidas|length }}</span>
+            </div>
+            <div id="listaSaidas">
+                {% for v in saidas %}
+                <div class="feed-item">
+                    <div class="feed-badge saida" aria-hidden="true">↓</div>
+                    <div class="feed-info">
+                        <span class="feed-placa">{{ v.placa }}</span>
+                        <span class="feed-prop">{{ v.proprietario }}</span>
+                        <span class="feed-modelo">{{ v.modelo }}</span>
+                    </div>
+                    <div class="feed-tempo">
+                        <span class="feed-hora-label">{{ v.entrada }} → {{ v.saida }}</span>
+                        <span class="feed-duracao">ficou {{ v.duracao }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="feed-empty-section">Nenhum veículo saiu hoje ainda</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    const HOME_JSON = "{% url 'home_json' %}";
+    // ── Elapsed time para veículos dentro (atualiza a cada segundo) ──
+    function calcElapsed(ts) {
+        const diff = Math.floor((Date.now() - ts) / 1000);
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+        const s = diff % 60;
+        if (h > 0) return `há ${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+        if (m > 0) return `há ${m}m ${String(s).padStart(2,'0')}s`;
+        return `há ${s}s`;
+    }
+
+    function atualizarElapsed() {
+        document.querySelectorAll('.feed-elapsed[data-ts]').forEach(function(el) {
+            el.textContent = calcElapsed(parseInt(el.dataset.ts));
+        });
+    }
+    setInterval(atualizarElapsed, 1000);
+    atualizarElapsed();
+
+    // ── Renderiza item "dentro agora" ──
+    function renderDentro(v) {
+        return `<div class="feed-item">
+            <div class="feed-badge entrada" aria-hidden="true">↑</div>
+            <div class="feed-info">
+                <span class="feed-placa">${v.placa}</span>
+                <span class="feed-prop">${v.proprietario}</span>
+                <span class="feed-modelo">${v.modelo || 'Modelo não informado'}</span>
+            </div>
+            <div class="feed-tempo">
+                <span class="feed-hora-label">entrou ${v.entrada}</span>
+                <span class="feed-elapsed" data-ts="${v.entrada_ts}">${calcElapsed(v.entrada_ts)}</span>
+            </div>
+        </div>`;
+    }
+
+    // ── Renderiza item "saiu hoje" ──
+    function renderSaida(v) {
+        return `<div class="feed-item">
+            <div class="feed-badge saida" aria-hidden="true">↓</div>
+            <div class="feed-info">
+                <span class="feed-placa">${v.placa}</span>
+                <span class="feed-prop">${v.proprietario}</span>
+                <span class="feed-modelo">${v.modelo || 'Modelo não informado'}</span>
+            </div>
+            <div class="feed-tempo">
+                <span class="feed-hora-label">${v.entrada} → ${v.saida}</span>
+                <span class="feed-duracao">ficou ${v.duracao}</span>
+            </div>
+        </div>`;
+    }
+
+    // ── Atualização periódica via Fetch (30s) ──
+    async function atualizarFeed() {
+        try {
+            const resp = await fetch(HOME_JSON);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            // KPIs
+            document.getElementById('kpiEntradas').textContent = data.total_entradas_hoje;
+            document.getElementById('kpiSaidas').textContent   = data.total_saidas_hoje;
+            document.getElementById('kpiDentro').textContent   = data.veiculos_dentro;
+
+            // Dentro agora
+            const listaDentro = document.getElementById('listaDentro');
+            document.getElementById('countDentro').textContent = data.dentro.length;
+            listaDentro.innerHTML = data.dentro.length
+                ? data.dentro.map(renderDentro).join('')
+                : '<div class="feed-empty-section">Nenhum veículo dentro no momento</div>';
+
+            // Saíram hoje
+            const listaSaidas = document.getElementById('listaSaidas');
+            document.getElementById('countSaidas').textContent = data.saidas.length;
+            listaSaidas.innerHTML = data.saidas.length
+                ? data.saidas.map(renderSaida).join('')
+                : '<div class="feed-empty-section">Nenhum veículo saiu hoje ainda</div>';
+
+            // Status
+            const el = document.getElementById('feedAtualizado');
+            if (el) el.textContent = `atualizado às ${data.hora_atual}`;
+
+            // Reinicia elapsed após re-render
+            atualizarElapsed();
+        } catch (e) { /* falha silenciosa */ }
+    }
+
+    atualizarFeed();
+    setInterval(atualizarFeed, 30000);
+})();
+</script>
+{% endblock %}
