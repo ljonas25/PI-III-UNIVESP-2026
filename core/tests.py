@@ -290,7 +290,7 @@ class TestLoginView(TestCase):
         response = self.client.post(reverse('login'), {
             'cpf': CPF_VALIDO_1, 'senha': SENHA_TESTE
         })
-        self.assertRedirects(response, reverse('menu'))
+        self.assertRedirects(response, reverse('home'))
 
     def test_login_senha_errada_exibe_erro(self):
         response = self.client.post(reverse('login'), {
@@ -338,8 +338,10 @@ class TestViewsNaoAutenticado(TestCase):
     def test_cadastro_veiculo_exige_login(self):
         self._deve_redirecionar('cadastro_veiculo')
 
-    def test_cadastro_usuario_exige_login(self):
-        self._deve_redirecionar('cadastro_usuario')
+    def test_cadastro_usuario_acessivel_sem_login(self):
+        response = self.client.get(reverse('cadastro_usuario'))
+        self.assertEqual(response.status_code, 200,
+            msg="Cadastro de usuário deve ser acessível sem autenticação")
 
     def test_historico_pdf_exige_login(self):
         self._deve_redirecionar('historico_pdf')
@@ -358,9 +360,9 @@ class TestViewsAutenticado(TestCase):
         )
         self.client.login(username=CPF_VALIDO_1, password=SENHA_TESTE)
 
-    def test_menu_retorna_200(self):
+    def test_menu_redireciona_para_home(self):
         response = self.client.get(reverse('menu'))
-        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, reverse('home'))
 
     def test_historico_retorna_200(self):
         response = self.client.get(reverse('historico'))
