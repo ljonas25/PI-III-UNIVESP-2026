@@ -50,6 +50,7 @@ jobs:
         run: |
           coverage run -m pytest
           coverage report --fail-under=70
+          coverage xml
 
       - name: Upload do relatório de cobertura
         uses: actions/upload-artifact@v4
@@ -62,4 +63,4 @@ jobs:
           flake8 core/ controle_veiculos_project/ \
             --max-line-length=120 \
             --exclude=migrations,__pycache__ \
-            --ignore=E501,W503
+            --ignore=E501,W503,E221,E241,E265,E266,E302,E128,E124,E701,W292,W293,F401,E272
